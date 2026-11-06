@@ -1,0 +1,47 @@
+# Java / Maven
+**/target/
+*.class
+*.jar
+*.war
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Application secrets
+**/application-local.properties
+**/application-secret.properties
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application configurations containing secrets
+**/src/main/resources/application.properties
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Maven
+**/target/
+
+# IDE
+.idea/
+*.iml/
+.vscode/
+
+# Logs
+*.log
