@@ -1,6 +1,5 @@
 package dev.routex.management.service;
 
-import dev.routex.management.dto.HealthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;

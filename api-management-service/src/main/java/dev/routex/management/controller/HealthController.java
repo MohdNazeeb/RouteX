@@ -1,6 +1,6 @@
 package dev.routex.management.controller;
 
-import dev.routex.management.dto.HealthResponse;
+import dev.routex.management.dto.responseDto.HealthResponse;
 import dev.routex.management.service.HealthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
