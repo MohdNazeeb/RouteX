@@ -1,4 +1,4 @@
-package dev.routex.management.dto;
+package dev.routex.management.dto.responseDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
