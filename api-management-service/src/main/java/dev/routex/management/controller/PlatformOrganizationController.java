@@ -24,7 +24,7 @@ public class PlatformOrganizationController {
         this.organizationService = organizationService;
     }
     // This controller is for Platform Admin
-    // CRUD -> Organization and Tenant Admin
+    // CRUD -> Organization
 
     @PostMapping
     public ResponseEntity<OrganizationResponse> createOrganization(
@@ -63,5 +63,42 @@ public class PlatformOrganizationController {
         return ResponseEntity.noContent().build();
     }
 
+    //CRUD --> Tenant admin
+    @PostMapping("/{organizationId}/tenant-admin")
+    public ResponseEntity<TenantAdminResponse> createTenantAdmin(
+            @PathVariable Long organizationId,
+            @Valid @RequestBody TenantAdminRequest request
+    ){
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(organizationService.createTenantAdmin(
+                        organizationId,request
+                ));
+    }
+    @GetMapping("/{organizationId}/tenant-admin")
+    public ResponseEntity<TenantAdminResponse> getTenantAdmin(
+            @PathVariable Long id
+    ){
+        return ResponseEntity.ok(
+                organizationService.getTenantAdmin(id)
+        );
+    }
 
+    @PutMapping("/{organizationId}/tenant-admin")
+    public ResponseEntity<TenantAdminResponse> updateTenantAdmin(
+            @PathVariable Long organizationId,
+            @Valid @RequestBody TenantAdminRequest request
+    ){
+        return ResponseEntity.ok(
+                organizationService.updateTenantAdmin(
+                        organizationId,
+                        request
+                )
+        );
+    }
+
+    @DeleteMapping("/{organization-id}/tenant-admin")
+    public ResponseEntity<Void> deleteTenantAdmin(@PathVariable Long id) {
+        organizationService.deleteTenantAdmin(id);
+        return ResponseEntity.noContent().build();
+    }
 }
