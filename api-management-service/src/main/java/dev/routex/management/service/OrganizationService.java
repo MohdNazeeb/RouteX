@@ -5,11 +5,17 @@ import dev.routex.management.dto.requestDto.OrganizationStatusRequest;
 import dev.routex.management.dto.requestDto.TenantAdminRequest;
 import dev.routex.management.dto.responseDto.OrganizationResponse;
 import dev.routex.management.dto.responseDto.TenantAdminResponse;
+import dev.routex.management.entity.ManagementUser;
 import dev.routex.management.entity.Organization;
 import dev.routex.management.entity.OrganizationStatus;
+import dev.routex.management.entity.Role;
 import dev.routex.management.exception.ApiException;
+import dev.routex.management.repository.ManagementUserRepository;
 import dev.routex.management.repository.OrganizationRepository;
+import dev.routex.management.repository.RoleRepository;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Service;
@@ -21,11 +27,24 @@ import java.util.List;
 @Service
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
+    private final ManagementUserRepository managementUserRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public OrganizationService(OrganizationRepository organizationRepository){
+    public OrganizationService(OrganizationRepository organizationRepository,
+                               ManagementUserRepository managementUserRepository,
+                               RoleRepository roleRepository,
+                               PasswordEncoder passwordEncoder){
         this.organizationRepository
                 = organizationRepository;
+        this.managementUserRepository
+                = managementUserRepository;
+        this.roleRepository
+                = roleRepository;
+        this.passwordEncoder
+                = passwordEncoder;
     }
+
 
     @Transactional
     public OrganizationResponse create(OrganizationRequest request){
@@ -105,6 +124,83 @@ public class OrganizationService {
     }
 
 
+    @Transactional
+    public TenantAdminResponse createTenantAdmin(
+            Long organizationId,
+            TenantAdminRequest request){
+        long startedAt = System.nanoTime();
+        Organization organization = getOrganization(organizationId);
+
+        if(managementUserRepository.findByOrganizationId(organizationId).isPresent()){
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "This organization already has a tenant administrator");
+        }
+        if(managementUserRepository.existsByUsername(request.getUsername())){
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Username already exist");
+        }
+        Role role = roleRepository.findByName("TENANT_ADMIN")
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "TENANT_ADMIN role is missinng"
+                ));
+        ManagementUser user = new ManagementUser();
+        user.setOrganization(organization);
+        user.setRole(role);
+        user.setUsername(request.getUsername());
+        user.setPasswordHash(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setEnabled(request.isEnabled());
+        managementUserRepository.save(user);
+
+        return TenantAdminResponse.from(user);
+    }
+
+    @Transactional
+    public  TenantAdminResponse getTenantAdmin(Long organizationId) {
+        return TenantAdminResponse.from(getTenantAdminEntity(
+                organizationId
+        ));
+
+    }
+
+    @Transactional
+    public TenantAdminResponse updateTenantAdmin(
+            Long organizationId,
+            TenantAdminRequest request
+    ){
+        long startedAt = System.nanoTime();
+        ManagementUser user = getTenantAdminEntity(organizationId);
+
+        if(!user.getUsername().equals(request.getUsername()) &&
+           managementUserRepository.existsByUsername(request.getUsername())){
+            throw new ApiException(HttpStatus.CONFLICT,"Username already exist");
+        }
+
+        user.setUsername(request.getUsername());
+        user.setPasswordHash(passwordEncoder.encode(
+                request.getPassword()
+        ));
+        user.setEnabled(request.isEnabled());
+        user.setUpdatedAt(LocalDateTime.now());
+
+        return TenantAdminResponse.from(user);
+    }
+
+    @Transactional
+    public void deleteTenantAdmin(Long id){
+        long startedAt = System.nanoTime();
+
+        ManagementUser user = getTenantAdminEntity(id);
+
+        managementUserRepository.delete(user);
+    }
+
     private Organization getOrganization(Long id){
         return organizationRepository.
                 findByIdAndStatusNot(id,OrganizationStatus.DELETED)
@@ -129,5 +225,15 @@ public class OrganizationService {
                 throw new ApiException(HttpStatus.CONFLICT, "Organization slug already exists");
             }
         }
+
     }
+    public ManagementUser getTenantAdminEntity(Long organizationId){
+        ManagementUser user = managementUserRepository.findByOrganizationId(organizationId)
+                .orElseThrow(() -> new
+                        ApiException(HttpStatus.CONFLICT,
+                        "Tenant Administrator not found"));
+        return user;
+    }
+
+
 }
